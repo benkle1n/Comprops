@@ -50,8 +50,8 @@ h2{font-size:clamp(30px,5vw,44px);margin-bottom:6px}
 .facts span:last-child{color:var(--muted);font-weight:500}
 .empty{padding:40px 0;color:var(--muted)}
 .mapbox{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--land)}
-.mapbox svg{display:block;width:100%;height:auto}
-.mapbox .river{fill:none;stroke:var(--water);stroke-linecap:round;stroke-linejoin:round}
+.mapbox>svg{display:block;width:100%;height:auto}
+.mapbox>svg .river{fill:none;stroke:var(--water);stroke-linecap:round;stroke-linejoin:round}
 .mapbox .lbl{font:600 11px Barlow,sans-serif;fill:var(--muted)}
 .pin{cursor:pointer}.pin circle{fill:var(--steel);stroke:var(--gold);stroke-width:3}
 .pin.on circle{fill:var(--gold);stroke:var(--steel)}
@@ -79,12 +79,14 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0}dt{color:va
 .toast.show{opacity:1}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap}.th{position:relative;width:76px;height:76px;border-radius:4px;overflow:hidden;border:1px solid var(--line)}.th img{width:100%;height:100%;object-fit:cover;display:block}.th button{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.75);color:#fff;border:0;border-radius:3px;cursor:pointer;line-height:1;padding:3px 6px;font-size:14px}[hidden]{display:none!important}.thumb{position:relative;overflow:hidden}.thumb svg{position:absolute;inset:0;width:100%;height:100%}.thumb span{position:relative;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.5)}.ill{height:150px;border-radius:4px}.phb{display:block;text-align:center;margin-top:10px;text-decoration:none}.gal{display:flex;gap:8px;overflow-x:auto}.adv{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.sb{grid-column:3/5;display:grid;gap:8px}.acts select{width:auto}.facts small{display:block;font-weight:400;color:var(--muted);font-size:14px}@media(max-width:760px){.adv{grid-template-columns:1fr 1fr}.sb{grid-column:1/-1}}.gal img{height:190px;width:auto;border-radius:4px;flex:none}
 .qf{border:1px dashed var(--line);border-radius:6px;padding:12px;display:grid;gap:8px;background:var(--bg)}.qf textarea{background:var(--surface)}.mini{padding:6px 12px;font-size:14px}.acts{display:flex;gap:8px;flex-wrap:wrap}.mrow{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding:10px 0}.mrow strong{display:block}
+.logo{margin-right:auto}.acct:empty{display:none}#ln{white-space:nowrap;padding:10px 16px}@media(max-width:420px){nav{padding:12px 12px;gap:6px}#ln{padding:8px 10px;font-size:15px}.burger{width:40px;margin-right:-4px}}.burger{background:none;border:0;color:inherit;width:44px;height:44px;margin:-6px -8px -6px 0;display:grid;place-items:center;cursor:pointer;border-radius:6px}.burger:hover,.burger[aria-expanded=true]{background:rgba(255,255,255,.14)}.menu{position:fixed;top:60px;right:12px;z-index:60;min-width:210px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(10,15,22,.3);padding:6px;display:grid}.menu[hidden]{display:none}.menu button{background:none;border:0;color:inherit;font:600 16px Barlow,system-ui,sans-serif;text-align:left;padding:0 14px;min-height:46px;border-radius:5px;cursor:pointer}.menu button:hover,.menu button:focus-visible{background:var(--bg)}
 @media(max-width:760px){.search{grid-template-columns:1fr}.row2{grid-template-columns:1fr}.acct .hide-s{display:none}}
 </style>
 </head>
 <body>
 <header><div class="bgart" role="presentation"></div>
-  <nav><a class="logo" href="#"><svg width="38" height="38" viewBox="0 0 34 34" aria-hidden="true"><path d="M31 14L17 5L3 14V28H31" fill="none" stroke="#f2b705" stroke-width="5" stroke-linejoin="miter"/><rect x="12" y="18" width="10" height="10" fill="#fbd756"/></svg><span><b class="cm">Com</b>props</span></a><div class="acct" id="acct"></div></nav>
+  <nav><a class="logo" href="#"><svg width="38" height="38" viewBox="0 0 34 34" aria-hidden="true"><path d="M31 14L17 5L3 14V28H31" fill="none" stroke="#f2b705" stroke-width="5" stroke-linejoin="miter"/><rect x="12" y="18" width="10" height="10" fill="#fbd756"/></svg><span><b class="cm">Com</b>props</span></a><div class="acct" id="acct"></div><button type="button" class="btn" id="ln">List a prop</button><button type="button" class="burger" id="burger" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button></nav>
+<div class="menu" id="menu" role="menu" hidden><button type="button" role="menuitem" data-m="find">Find a Prop</button><button type="button" role="menuitem" data-m="list">List a Prop</button><button type="button" role="menuitem" data-m="props">My Props</button><button type="button" role="menuitem" data-m="map">Map view</button><button type="button" role="menuitem" data-m="about">About Us</button></div>
   <div class="wrap hero">
     <h1><span class="l1"><span style="color:var(--gold)">Commercial</span> properties</span><br>in Pittsburgh.</h1>
     <p>Comprops is an AI-powered ecosystem for Pittsburgh’s commercial real estate — warehouses, flex, retail, office, land, and more. Buy, sell, lease, and monitor property effortlessly. Listings are always free.</p>
@@ -104,10 +106,16 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0}dt{color:va
 </div></div>
 <div id="apage" hidden><div class="wrap lp terms"><a class="link" href="#">← Back to all listings</a>
 <h1 style="margin-top:14px">About Us</h1>
-<p>Welcome to Comprops, a modern digital platform built by industry veterans to streamline commercial real estate leasing and discovery.</p>
-<p>Our team brings together decades of hands-on experience across commercial property development, urban asset management, and leasing operations. Having spent years navigating the complexities of the real estate market—from large-scale industrial flex warehouse projects to neighborhood retail developments—we understand the friction points that brokers, property owners, and tenants face every day.</p>
-<p>We built comprops.com to cut through the noise. By combining seasoned industry insight with a clean, high-performance digital environment, we provide a reliable, transparent space where quality listings meet the right opportunities.</p>
-<p>Have questions or want to learn more about our platform? Reach out to our team at <strong class="eml">support@comprops.com</strong>.</p>
+<h2>Who Invited Us to the Real Estate Party? 👋</h2>
+<p>Welcome to Comprops—an AI-powered commercial real estate platform for people to buy, sell, and lease commercial real estate in Pittsburgh, PA.</p>
+<p>We’re a crew of industry veterans who have spent decades in the trenches of property development, urban asset management, and daily transactions. We’ve done it all: from wrangling massive industrial flex warehouses to bringing neighborhood retail spaces and investment portfolios to life.</p>
+<p>Along the way, we spent way too many hours wrestling with clunky systems, endless paperwork, and the kind of market friction that makes everyone want to pull their hair out. We figured there had to be a better way. So, we rolled up our sleeves and built one.</p>
+<h2>Why Comprops?</h2>
+<p>We built comprops.com to cut through the noise and inject a little sanity (and speed) into how people lease, buy, and sell commercial space.</p>
+<p>By combining hard-won industry wisdom with a clean, high-performance digital platform, we’ve created a transparent, stress-free hub where great properties and the right deals actually find each other. Whether you're hunting for your next tenant, buying a new asset, or selling a property, we make the process smooth and modern.</p>
+<h2>Let’s Chat! ☕</h2>
+<p>Got questions? Want to talk shop, or just curious about what we’re building next? We’re always down to chat.</p>
+<p>Drop us a line anytime at <strong class="eml">support@comprops.com</strong>—we promise a real human will write back.</p>
 </div></div>
 <div id="tpage" hidden><div class="wrap lp terms"><a class="link" href="#">← Back to all listings</a>
 <h1 style="margin-top:14px">Terms and Conditions</h1>
@@ -388,7 +396,7 @@ function mapInit(){
 let tlErr=0;
 function setB(k){curB=k;document.querySelectorAll(".mapbtns button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.b===k));Object.values(TL).forEach(t=>lmap.hasLayer(t)&&lmap.removeLayer(t));
   if(k==="simple"){if(!lmap.hasLayer(base))base.addTo(lmap);$("mapnote").hidden=true;baseZoom();return}
-  TL[k].addTo(lmap);if(!tl&&!lmap.hasLayer(base)){base.addTo(lmap)}baseZoom()}
+  TL[k].addTo(lmap);if(!tl&&!lmap.hasLayer(base)){base.addTo(lmap)}else if(tl&&lmap.hasLayer(base)){lmap.removeLayer(base);[lab,lab2].forEach(l=>lmap.hasLayer(l)&&lmap.removeLayer(l))}baseZoom()}
 function pinTxt(x){const p=pr(x),psf=$("pb").value==="s",K=v=>v>=1e6?"$"+(Math.floor(v/1e5+.5)/10).toFixed(1)+"M":v>=1e3?"$"+(Math.floor(v/100+.5)/10).toFixed(1)+"K":"$"+Math.round(v);
   if(psf)return p.plo!=null?"$"+(Math.floor(p.plo*10+.5)/10).toFixed(1)+"/SF":"Ask";
   return p.mlo!=null?K(p.mlo):p.tot!=null?K(p.tot):"Ask"}
@@ -415,8 +423,24 @@ function render(){
   if(pid())drawPage();
   acct();
 }
-function acct(){const u=me();$("acct").innerHTML=u?`<span class="hide-s">Hi, ${esc(u.name.split(" ")[0])}</span><button class="link" id="my">My listings</button><button class="link" id="out">Sign out</button><button class="btn" id="ln">List a prop</button>`:`<button class="link" id="in">Sign in</button><button class="btn" id="ln">List a prop</button>`;
-  $("tabSign").textContent=u?"Sign Out":"Sign In";$("ln").onclick=openNew;if(u)$("my").onclick=openMine;if(u)$("out").onclick=()=>{signOutNow();toast("Signed out")};else $("in").onclick=()=>openAuth("in")}
+function acct(){const u=me();$("acct").innerHTML=u?`<span class="hide-s">Hi, ${esc(u.name.split(" ")[0])}</span>`:"";
+  $("tabSign").textContent=u?"Sign Out":"Sign In"}
+/* top-right menu */
+const mnu=$("menu"),bur=$("burger");$("ln").onclick=openNew;
+function menuShut(){mnu.hidden=true;bur.setAttribute("aria-expanded","false")}
+function goMap(){if(pid()||["#terms","#about","#contact"].includes(location.hash)){history.replaceState(null,"",location.pathname+location.search);route()}
+  view="map";lKey="";render();setTimeout(()=>{const w=$("mapwrap");w.scrollIntoView({behavior:"smooth",block:"start"});if(lmap)lmap.invalidateSize(false)},80)}
+function goSearch(){if(pid()||["#terms","#about","#contact"].includes(location.hash)){history.replaceState(null,"",location.pathname+location.search);route()}
+  setTimeout(()=>{$("sform").scrollIntoView({behavior:"smooth",block:"center"});try{$("q").focus({preventScroll:true})}catch(_){}},60)}
+bur.onclick=e=>{e.stopPropagation();const o=mnu.hidden;mnu.hidden=!o;bur.setAttribute("aria-expanded",String(o));if(o)mnu.querySelector("button").focus()};
+mnu.onclick=e=>{const b=e.target.closest("[data-m]");if(!b)return;const m=b.dataset.m,u=me();menuShut();
+  if(m==="find")goSearch();
+  else if(m==="list")openNew();
+  else if(m==="props"){if(u)openMine();else{toast("Sign in to see your props.");after=openMine;openAuth("in")}}
+  else if(m==="map")goMap()
+  else if(m==="about")location.hash="#about"};
+document.addEventListener("click",e=>{if(!mnu.hidden&&!mnu.contains(e.target))menuShut()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!mnu.hidden){menuShut();bur.focus()}});
 
 document.querySelectorAll("#tabbar [data-t]").forEach(b=>b.onclick=()=>{const t=b.dataset.t,u=me();
   if(t==="home"){if(pid()||location.hash==="#terms"||location.hash==="#about"||location.hash==="#contact")location.hash="";else{history.replaceState(null,"",location.pathname+location.search)}window.scrollTo({top:0,behavior:"smooth"});route()}
