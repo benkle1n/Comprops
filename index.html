@@ -100,14 +100,14 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0}dt{color:va
 <div id="lpage" hidden></div>
 <div id="cpage" hidden><div class="wrap lp terms"><a class="link" href="#">← Back to all listings</a>
 <h1 style="margin-top:14px">Contact Us</h1>
-<p>Whether you are searching for your next commercial space, managing a portfolio, or navigating the complexities of property leasing, the team at Comprops is here to help you with all of your real estate needs. We would love to hear from you—reach out to us at <strong class="eml">hello@comprops.com</strong> to share your feedback, guidance, success stories, or any questions you might have as you explore our platform.</p>
+<p>Whether you are searching for your next commercial space, managing a portfolio, or navigating the complexities of property leasing, the team at Comprops is here to help you with all of your real estate needs. We would love to hear from you—reach out to us at <strong class="eml">support@comprops.com</strong> to share your feedback, guidance, success stories, or any questions you might have as you explore our platform.</p>
 </div></div>
 <div id="apage" hidden><div class="wrap lp terms"><a class="link" href="#">← Back to all listings</a>
 <h1 style="margin-top:14px">About Us</h1>
 <p>Welcome to Comprops, a modern digital platform built by industry veterans to streamline commercial real estate leasing and discovery.</p>
 <p>Our team brings together decades of hands-on experience across commercial property development, urban asset management, and leasing operations. Having spent years navigating the complexities of the real estate market—from large-scale industrial flex warehouse projects to neighborhood retail developments—we understand the friction points that brokers, property owners, and tenants face every day.</p>
 <p>We built comprops.com to cut through the noise. By combining seasoned industry insight with a clean, high-performance digital environment, we provide a reliable, transparent space where quality listings meet the right opportunities.</p>
-<p>Have questions or want to learn more about our platform? Reach out to our team at <strong class="eml">hello@comprops.com</strong>.</p>
+<p>Have questions or want to learn more about our platform? Reach out to our team at <strong class="eml">support@comprops.com</strong>.</p>
 </div></div>
 <div id="tpage" hidden><div class="wrap lp terms"><a class="link" href="#">← Back to all listings</a>
 <h1 style="margin-top:14px">Terms and Conditions</h1>
@@ -125,7 +125,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0}dt{color:va
 <h2>4. DMCA Copyright Infringement Policy &amp; Takedown Procedures</h2>
 <p>comprops.com prioritizes intellectual property protection and adheres to the Digital Millennium Copyright Act (DMCA).</p>
 <ul class="bl">
-<li><strong>Designated Point of Contact:</strong> Send all formal copyright infringement claims, takedown requests, and counter-notices to our compliance team at <strong class="eml">hello@comprops.com</strong>.</li>
+<li><strong>Designated Point of Contact:</strong> Send all formal copyright infringement claims, takedown requests, and counter-notices to our compliance team at <strong class="eml">support@comprops.com</strong>.</li>
 <li><strong>Takedown Submissions:</strong> Copyright holders or authorized representatives submitting a removal request must supply a digital or physical signature of an authorized person, specification of the copyrighted work alleged to be infringed, exact location details (such as URLs) enabling comprops.com to locate the material, complainant contact details including an email address, a good-faith declaration that the disputed use lacks authorization, and a sworn statement under penalty of perjury confirming accuracy and authority.</li>
 <li><strong>Counter-Notice Requirements:</strong> If material was taken down due to an error or misidentification, your counter-notice must include your signature, identification of the disabled content and its previous online location, a signed statement under penalty of perjury asserting a good-faith belief that the content was removed erroneously, your contact information including an email address, and consent to local federal court jurisdiction.</li>
 <li><strong>Phone Number Requirement Note:</strong> Under the DMCA (17 U.S.C. § 512(c)(3)), a takedown notice requires information reasonably sufficient to permit contact, such as an address, telephone number, and email address. Because an email address is provided, a telephone number is not strictly mandatory for a valid notice.</li>
@@ -138,7 +138,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0}dt{color:va
 <p>You agree to defend, indemnify, and hold harmless Comprops, its officers, directors, employees, and agents from and against any claims, liabilities, damages, judgments, awards, losses, costs, or expenses (including reasonable attorneys' fees) arising out of or relating to your violation of these Terms or your posted listings and content.</p>
 <h2>8. Governing Law &amp; Jurisdiction</h2>
 <p>These Terms are governed exclusively by the laws of the Commonwealth of Pennsylvania. Any legal disputes arising out of or related to the Site or these Terms shall be brought exclusively in the federal or state courts located in Pittsburgh, Pennsylvania.</p>
-<p><em>For any questions regarding these Terms and Conditions or our copyright policies, please contact us at <strong class="eml">hello@comprops.com</strong>.</em></p>
+<p><em>For any questions regarding these Terms and Conditions or our copyright policies, please contact us at <strong class="eml">support@comprops.com</strong>.</em></p>
 </div></div>
 <main class="wrap">
   <section id="results">
@@ -492,6 +492,11 @@ function setMode(m){mode=m;const up=m==="up",rs=m==="reset";$("aTitle").textCont
 const FB={config:{apiKey:"AIzaSyA1yCBKQ96eeyuCFUnMA713JwVmDJXoBFQ",authDomain:"comprops-aa5f3.firebaseapp.com",projectId:"comprops-aa5f3",appId:"1:521421423642:web:5b4e3b7e9d9cac56e73da3"}};
 const fbOn=()=>!!(FB.config.apiKey&&FB.config.authDomain&&FB.config.projectId&&FB.config.appId);
 const loadScript=src=>new Promise((ok,no)=>{const t=document.createElement("script");t.src=src;t.onload=ok;t.onerror=no;document.head.appendChild(t)});
+/* Welcome email via EmailJS (free tier). Fill these in after creating your EmailJS account, service and template; leave blank to send nothing. */
+const EJ={publicKey:"",serviceId:"",templateId:""};
+function welcome(email,name){email=String(email||"").toLowerCase();if(!email||!EJ.publicKey||!EJ.serviceId||!EJ.templateId)return;
+  const done=ls("cp_welcomed")||[];if(done.includes(email))return;done.push(email);ls("cp_welcomed",done);
+  loadScript("https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js").then(()=>emailjs.send(EJ.serviceId,EJ.templateId,{to_email:email,to_name:(name||email.split("@")[0]).split(" ")[0],full_name:name||"",site_url:location.origin},{publicKey:EJ.publicKey})).catch(()=>{const d=(ls("cp_welcomed")||[]).filter(x=>x!==email);ls("cp_welcomed",d)})}
 let fbA=null,fbP=null;
 function fbInit(){if(!fbOn())return Promise.resolve(null);if(fbP)return fbP;
   const V="10.12.2",B="https://www.gstatic.com/firebasejs/"+V+"/";
@@ -515,7 +520,8 @@ async function ssoGo(prov){const er=$("aErr");er.textContent="";
     const r=await A.signInWithPopup(p),u=r.user;if(!u.email){await A.signOut();er.textContent="That account has no email address.";return}
     const known=users.find(x=>x.email===u.email.toLowerCase());
     if(!known&&!$("aTerms").checked){await A.signOut();setMode("up");er.textContent="Welcome! Agree to the Terms below, then choose "+prov+" again to finish.";return}
-    adopt(u.email,u.displayName,prov,$("aRole").value)}
+    const fresh=!known&&((r.additionalUserInfo&&r.additionalUserInfo.isNewUser)||(u.metadata&&Date.now()-Date.parse(u.metadata.creationTime)<6e5));
+    adopt(u.email,u.displayName,prov,$("aRole").value);if(fresh)welcome(u.email,u.displayName)}
   catch(e){er.textContent=fbMsg(e)}}
 $("ssoG").onclick=()=>ssoGo("Google");$("ssoA").onclick=()=>ssoGo("Apple");
 function signOutNow(){sess=null;ls("cp_sess",null);if(fbA)fbA.signOut().catch(()=>{});render()}
@@ -539,7 +545,7 @@ $("fAuth").onsubmit=async e=>{e.preventDefault();const em=$("aEmail").value.trim
       if(mode==="up"){const nm=$("aName").value.trim();c=await A.createUserWithEmailAndPassword(em,pw);try{await c.user.updateProfile({displayName:nm})}catch(_){}
         users=users.filter(x=>x.email!==em);users.push({email:em,name:nm,role:$("aRole").value,h:null,provider:"email",fb:1,terms:Date.now()});ls("cp_users",users)}
       else c=await A.signInWithEmailAndPassword(em,pw);
-      go.disabled=false;adopt(em,c.user.displayName,"email",$("aRole").value);if(mode==="up")toast("Account created. You’re signed in.")}
+      const wasUp=mode==="up";go.disabled=false;adopt(em,c.user.displayName,"email",$("aRole").value);if(wasUp){toast("Account created. You’re signed in.");welcome(em,$("aName").value.trim()||c.user.displayName)}}
     catch(x){go.disabled=false;er.textContent=A?fbMsg(x):"Couldn’t reach the sign-in service. Try again."}
     return}
   /* demo mode: accounts live in this browser only */
