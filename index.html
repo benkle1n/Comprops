@@ -586,8 +586,10 @@ function track(t,o){o=o||{};if(!AN.on||!fbOn())return;
     else return;
     fbDB.doc("daily/"+day).set(d,{merge:true}).catch(()=>{});
     if(t!=="pv")fbDB.collection("events").add(ev).catch(()=>{})}).catch(()=>{})}
+function backfillProfile(email,name,prov){if(!AN.on)return;const u=fbA&&fbA.currentUser;if(!u||!fbDB)return;const l=users.find(x=>x.email===String(email).toLowerCase());
+  fbDB.doc("signups/"+u.uid).set({email:String(email).toLowerCase(),name:name||(l&&l.name)||"",role:(l&&l.role)||"",provider:prov||"email",ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})}
 function recordSignup(email,name,role,prov){track("signup");if(!AN.on)return;const u=fbA&&fbA.currentUser;if(!u||!fbDB)return;
-  fbDB.doc("signups/"+u.uid).set({email:String(email).toLowerCase(),name:name||"",role:role||"",provider:prov,ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})}
+  fbDB.doc("signups/"+u.uid).set({email:String(email).toLowerCase(),name:name||"",role:role||"",provider:prov,ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(e=>console.warn("sign-up record failed",e&&e.code))}
 function fbInit(){if(!fbOn())return Promise.resolve(null);if(fbP)return fbP;
   const V="10.12.2",B="https://www.gstatic.com/firebasejs/"+V+"/";
   return fbP=loadScript(B+"firebase-app-compat.js").then(()=>loadScript(B+"firebase-auth-compat.js")).then(()=>loadScript(B+"firebase-firestore-compat.js")).then(()=>{firebase.initializeApp(FB.config);fbA=firebase.auth();try{fbDB=firebase.firestore()}catch(_){}
@@ -611,7 +613,7 @@ async function ssoGo(prov){const er=$("aErr");er.textContent="";
     const known=users.find(x=>x.email===u.email.toLowerCase());
     if(!known&&!$("aTerms").checked){await A.signOut();setMode("up");er.textContent="Welcome! Agree to the Terms and Privacy Policy below, then choose "+prov+" again to finish.";return}
     const fresh=!known&&((r.additionalUserInfo&&r.additionalUserInfo.isNewUser)||(u.metadata&&Date.now()-Date.parse(u.metadata.creationTime)<6e5));
-    adopt(u.email,u.displayName,prov,$("aRole").value);if(fresh){welcome(u.email,u.displayName);recordSignup(u.email,u.displayName,$("aRole").value,prov)}else track("signin")}
+    adopt(u.email,u.displayName,prov,$("aRole").value);if(fresh){welcome(u.email,u.displayName);recordSignup(u.email,u.displayName,$("aRole").value,prov)}else{track("signin");backfillProfile(u.email,u.displayName,prov)}}
   catch(e){er.textContent=fbMsg(e)}}
 $("ssoG").onclick=()=>ssoGo("Google");$("ssoA").onclick=()=>ssoGo("Apple");
 function signOutNow(){sess=null;ls("cp_sess",null);if(fbA)fbA.signOut().catch(()=>{});render()}
@@ -636,7 +638,7 @@ $("fAuth").onsubmit=async e=>{e.preventDefault();const em=$("aEmail").value.trim
       if(mode==="up"){const nm=$("aName").value.trim();c=await A.createUserWithEmailAndPassword(em,pw);try{await c.user.updateProfile({displayName:nm})}catch(_){}
         users=users.filter(x=>x.email!==em);users.push({email:em,name:nm,role:$("aRole").value,h:null,provider:"email",fb:1,terms:Date.now()});ls("cp_users",users)}
       else c=await A.signInWithEmailAndPassword(em,pw);
-      const wasUp=mode==="up";go.disabled=false;adopt(em,c.user.displayName,"email",$("aRole").value);if(wasUp){toast("Account created. You’re signed in.");const nm=$("aName").value.trim()||c.user.displayName;welcome(em,nm);recordSignup(em,nm,$("aRole").value,"email")}else track("signin")}
+      const wasUp=mode==="up";go.disabled=false;adopt(em,c.user.displayName,"email",$("aRole").value);if(wasUp){toast("Account created. You’re signed in.");const nm=$("aName").value.trim()||c.user.displayName;welcome(em,nm);recordSignup(em,nm,$("aRole").value,"email")}else{track("signin");backfillProfile(em,c.user.displayName,"email")}}
     catch(x){go.disabled=false;er.textContent=A?fbMsg(x):"Couldn’t reach the sign-in service. Try again."}
     return}
   /* demo mode: accounts live in this browser only */

@@ -125,7 +125,7 @@ function loadReal(days){
   var dates=range(days*2),a=dates[0],b=dates[dates.length-1],fp=firebase.firestore.FieldPath.documentId(),db=state.db;
   return Promise.all([
     db.collection("daily").where(fp,">=",a).where(fp,"<=",b).get(),
-    db.collection("signups").orderBy("ts","desc").limit(100).get(),
+    db.collection("signups").orderBy("ts","desc").limit(500).get(),
     db.collection("events").orderBy("ts","desc").limit(40).get()
   ]).then(function(r){
     var dd=r[0].docs.map(function(d){var o=d.data();o.id=d.id;return o});
@@ -156,8 +156,9 @@ function dash(){
   app.innerHTML='<header class="bar"><div class="brand"><b>com</b>props<small>Admin</small></div><div class="ctl"><span class="who">'+esc(state.user?state.user.email:"")+'</span><select class="sel" id="rng" aria-label="Time range"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select><button class="btn" id="rf" type="button">Refresh</button>'+(state.user?'<button class="btn" id="so" type="button">Sign out</button>':'')+'</div></header>'
   +'<main>'+banner+'<section class="kpis" aria-label="Summary">'+kp+'</section>'
   +'<section class="card"><div class="hd"><h2>Traffic</h2><div class="seg" role="group" aria-label="Chart or table"><button type="button" data-v="chart" aria-pressed="'+(state.view==="chart")+'">Chart</button><button type="button" data-v="table" aria-pressed="'+(state.view==="table")+'">Table</button></div></div><div id="traf"></div></section>'
+  +'<section class="card" style="margin-bottom:18px"><div class="hd"><h2>Sign-ups <span id="suc" class="small"></span></h2><button class="mini" id="csv" type="button">Download CSV</button></div><div id="sups"></div></section>'
   +'<div class="grid2"><section class="card"><div class="hd"><h2>Most-viewed properties</h2><div class="seg" role="group" aria-label="Sort properties"><button type="button" data-s="v" aria-pressed="'+(state.sortKey==="v")+'">Views</button><button type="button" data-s="e" aria-pressed="'+(state.sortKey==="e")+'">Emails</button><button type="button" data-s="s" aria-pressed="'+(state.sortKey==="s")+'">Saves</button></div></div><div id="props"></div></section>'
-  +'<section class="card"><div class="hd"><h2>New sign-ups</h2><button class="mini" id="csv" type="button">Download CSV</button></div><div id="sups"></div></section></div>'
+  +'</div>'
   +'<div class="grid3"><section class="card"><div class="hd"><h2>Top searches</h2></div><div id="srch"></div></section><section class="card"><div class="hd"><h2>Where visitors come from</h2></div><div id="refs"></div></section><section class="card"><div class="hd"><h2>Other activity</h2></div><div id="oth"></div></section></div>'
   +'<section class="card"><div class="hd"><h2>Latest activity</h2></div><div id="feed"></div></section>'
   +'<p class="small">Counts use Eastern time. A visitor is counted once per browser per day. '+(state.demo?'':'Visits from your own browser are excluded if you open comprops.com/?notrack=1 once.')+'</p></main>';
@@ -200,8 +201,11 @@ function props(c){
   box.innerHTML='<div class="scroll"><table><thead><tr><th>Property</th><th>Views</th><th>Emails</th><th>Calls</th><th>Saves</th><th>Email rate</th></tr></thead><tbody>'+top.map(function(k,i){var rate=V[k]?(E[k]/V[k]*100).toFixed(1)+"%":"–";return'<tr><td class="t"><div title="'+esc(T[k]||k)+'"><span class="rank">'+(i+1)+'. </span>'+esc(T[k]||k)+'</div><div class="meter"><i style="width:'+Math.max(2,key[k]/mx*100)+'%"></i></div></td><td>'+nf(V[k])+'</td><td>'+nf(E[k])+'</td><td>'+nf(C[k])+'</td><td>'+nf(Sv[k])+'</td><td>'+rate+'</td></tr>'}).join("")+'</tbody></table></div>'+(ids.length>15?'<p class="small">Showing the top 15 of '+ids.length+' viewed properties.</p>':'')}
 
 function signups(list){
-  var box=$("sups");if(!list.length){box.innerHTML='<p class="empty">No sign-ups yet. New accounts appear here as soon as someone registers.</p>';return}
-  box.innerHTML='<ul class="rows">'+list.slice(0,10).map(function(s){return'<li><span class="a">'+esc(s.name||"(no name)")+'<span class="pill">'+esc(s.provider||"email")+'</span></span><span class="n" style="font-weight:500;font-size:13px;color:var(--muted)">'+(s.ms?ago(s.ms):"")+'</span><span class="b">'+esc(s.email||"")+' · '+esc(s.role||"")+'</span></li>'}).join("")+'</ul><p class="small">'+nf(list.length)+' most recent account'+(list.length===1?"":"s")+' loaded (download for all of them).</p>'}
+  var box=$("sups");$("suc").textContent=list.length?"· "+list.length+(list.length>=500?"+":"")+" accounts":"";
+  if(!list.length){box.innerHTML='<p class="empty">No sign-ups recorded yet. Each person is added here the first time they sign up or sign in on the live site. Earlier accounts appear once their owner signs in again.</p>';return}
+  var n=state.suN||25;
+  box.innerHTML='<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Method</th><th>Joined</th></tr></thead><tbody>'+list.slice(0,n).map(function(s){return'<tr><td class="t"><div>'+esc(s.name||"(no name)")+'</div></td><td><a href="mailto:'+esc(s.email||"")+'">'+esc(s.email||"")+'</a></td><td>'+esc(s.role||"–")+'</td><td>'+esc(s.provider||"email")+'</td><td>'+(s.ms?ago(s.ms):"–")+'</td></tr>'}).join("")+'</tbody></table></div>'+(list.length>n?'<p class="small"><button class="mini" id="sumore" type="button">Show more ('+(list.length-n)+')</button></p>':"");
+  var mb=$("sumore");if(mb)mb.onclick=function(){state.suN=n+50;signups(list)}}
 
 function searches(c){
   var q=mergeMap(c,"sq"),k=Object.keys(q).sort(function(a,b){return q[b]-q[a]}).slice(0,8),box=$("srch");
