@@ -371,6 +371,8 @@ const R=[
 const PH={};const T=x=>x.ts||(String(x.id)[0]==="m"?+String(x.id).slice(1):0),isNew=x=>Date.now()-(x.added||T(x))<6048e5,fmtD=t=>t?new Date(t).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"}):"";
 const ADD={"Colliers":"2026-11-03T06:35:00-05:00","PRC Commercial":"2026-11-01T09:00:00-05:00","Oxford Realty Services":"2026-11-01T09:10:00-05:00","SVN Three Rivers":"2026-11-01T16:44:00-05:00"},MOD={"2204 E Carson St":"2026-11-01T16:51:00-05:00","3500 Fifth Ave":"2026-11-01T17:00:00-05:00","160 N Craig St":"2026-11-01T17:12:00-05:00"};
 R.forEach((x,i)=>{if(PH[x.addr])x.photos=PH[x.addr];x.added=Date.parse(ADD[x.src])+i*1000;x.ts=MOD[x.addr]?Date.parse(MOD[x.addr]):x.added});
+/* Colliers listings, in the order they were added (oldest first) */
+["usa1156539-sale","usa1156539-lease","2809-banksville-rd","usa1143478","5301-butler-st-sublease","1201-north-ave","1330-western-ave","5777-baum-blvd","1310-western-ave","1000-robinson-centre-dr","5819-penn-ave"].forEach((sl,k)=>{const t=Date.parse("2026-11-03T06:30:00-05:00")+k*4*6e4;R.forEach(x=>{if(x.slug===sl){x.added=t;x.ts=t}})});
 /* On the live site the listing photos load from photos.js after the page appears, so the tiles show up right away. */
 function applyPH(){R.forEach(x=>{if(PH[x.addr])x.photos=PH[x.addr]})}
 if(!Object.keys(PH).length){const ldP=(v,tries)=>{const sc=document.createElement("script");sc.src="photos.js?v="+v;sc.onload=()=>{Object.assign(PH,window.__PH||{});applyPH();try{render();route()}catch(_){}};sc.onerror=()=>{sc.remove();if(tries>0)setTimeout(()=>ldP(Date.now(),tries-1),1500)};document.head.appendChild(sc)};ldP("20261102",2)}
