@@ -362,7 +362,7 @@ const ADD={"PRC Commercial":"2026-11-01T09:00:00-05:00","Oxford Realty Services"
 R.forEach((x,i)=>{if(PH[x.addr])x.photos=PH[x.addr];x.added=Date.parse(ADD[x.src])+i*1000;x.ts=MOD[x.addr]?Date.parse(MOD[x.addr]):x.added});
 /* On the live site the listing photos load from photos.js after the page appears, so the tiles show up right away. */
 function applyPH(){R.forEach(x=>{if(PH[x.addr])x.photos=PH[x.addr]})}
-if(!Object.keys(PH).length){const sc=document.createElement("script");sc.src="photos.js";sc.onload=()=>{Object.assign(PH,window.__PH||{});applyPH();try{render();route()}catch(_){}};document.head.appendChild(sc)}
+if(!Object.keys(PH).length){const ldP=(v,tries)=>{const sc=document.createElement("script");sc.src="photos.js?v="+v;sc.onload=()=>{Object.assign(PH,window.__PH||{});applyPH();try{render();route()}catch(_){}};sc.onerror=()=>{sc.remove();if(tries>0)setTimeout(()=>ldP(Date.now(),tries-1),1500)};document.head.appendChild(sc)};ldP("20261102",2)}
 const COL=[["#27364a","#4a6a8f"],["#3d4a2f","#7a8f4a"],["#5a2f3a","#a8556a"],["#1f4a4a","#45a0a0"],["#4a2f5a","#8f55a8"]];
 let mine=ls("cp_mine")||[],users=ls("cp_users")||[],sess=ls("cp_sess"),after=null,view="list",sel=null;
 mine.forEach(m=>{if(m.addr)m.title=m.addr});
