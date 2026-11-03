@@ -1,4 +1,5 @@
 <title>Comprops Admin</title>
+<meta name="robots" content="noindex,nofollow">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
@@ -161,6 +162,7 @@ function dash(){
   +'</div>'
   +'<div class="grid3"><section class="card"><div class="hd"><h2>Top searches</h2></div><div id="srch"></div></section><section class="card"><div class="hd"><h2>Where visitors come from</h2></div><div id="refs"></div></section><section class="card"><div class="hd"><h2>Other activity</h2></div><div id="oth"></div></section></div>'
   +'<section class="card"><div class="hd"><h2>Latest activity</h2></div><div id="feed"></div></section>'
+  +'<section class="card" style="margin-top:18px"><div class="hd"><h2>Listings <span id="lstc" class="small"></span></h2></div><div id="lst"><p class="empty">Loading…</p></div></section>'
   +'<p class="small">Counts use Eastern time. A visitor is counted once per browser per day. '+(state.demo?'':'Visits from your own browser are excluded if you open comprops.com/?notrack=1 once.')+'</p></main>';
   $("rng").value=String(nm);$("rng").onchange=function(){state.days=+this.value;boot(true)};
   $("rf").onclick=function(){boot(true)};
@@ -168,7 +170,20 @@ function dash(){
   app.querySelectorAll("[data-v]").forEach(function(b){b.onclick=function(){state.view=b.dataset.v;dash()}});
   app.querySelectorAll("[data-s]").forEach(function(b){b.onclick=function(){state.sortKey=b.dataset.s;dash()}});
   traffic(c);props(c);signups(d.signups);searches(c);refs(c);other(c);feed(d.events);
-  $("csv").onclick=function(){csv(d.signups)}}
+  $("csv").onclick=function(){csv(d.signups)};listings()}
+var pendL=null;
+function listings(){var box=$("lst");if(!box)return;if(state.demo||!state.db){box.innerHTML='<p class="empty">Not available in demo mode.</p>';return}
+  state.db.collection("listings").get().then(function(q){
+    var rows=q.docs.map(function(d){var x=d.data();x.id=d.id;return x}).sort(function(a,b){return(b.mt||b.ts||0)-(a.mt||a.ts||0)});
+    $("lstc").textContent="("+rows.length+")";
+    if(!rows.length){box.innerHTML='<p class="empty">No shared listings yet. Listings people post on comprops.com appear here.</p>';return}
+    box.innerHTML='<div class="scroll"><table><thead><tr><th>Address</th><th>Neighborhood</th><th>Posted by</th><th>Status</th><th></th></tr></thead><tbody>'+rows.map(function(x){
+      var st=x.draft?"Draft":x.hidden?"Hidden":x.pub?"Live":"Off";
+      return'<tr><td><a href="https://comprops.com/#listing='+encodeURIComponent(x.id)+'" target="_blank" rel="noopener">'+esc(x.addr||x.title)+'</a></td><td>'+esc(x.hood||"")+'</td><td>'+esc(x.email||"")+'</td><td>'+st+'</td><td style="white-space:nowrap"><button class="mini" data-lh="'+esc(x.id)+'" data-on="'+(x.pub?1:0)+'">'+(x.pub?"Hide":"Show")+'</button> <button class="mini" data-ld="'+esc(x.id)+'"'+(pendL===x.id?' style="background:#b3261e;color:#fff;border-color:#b3261e"':'')+'>'+(pendL===x.id?"Tap again to delete":"Delete")+'</button></td></tr>'}).join("")+'</tbody></table></div>';
+    box.querySelectorAll("[data-lh]").forEach(function(b){b.onclick=function(){var on=b.dataset.on==="1";state.db.doc("listings/"+b.dataset.lh).update({pub:!on,hidden:on,mt:Date.now()}).then(listings).catch(function(e){alert("Couldn’t update: "+(e&&e.code))})}});
+    box.querySelectorAll("[data-ld]").forEach(function(b){b.onclick=function(){var id=b.dataset.ld;if(pendL!==id){pendL=id;listings();return}pendL=null;
+      state.db.doc("listingPhotos/"+id).delete().catch(function(){}).then(function(){return state.db.doc("listings/"+id).delete()}).then(listings).catch(function(e){alert("Couldn’t delete: "+(e&&e.code))})}})
+  }).catch(function(e){box.innerHTML='<p class="empty">Couldn’t load listings ('+esc(e&&e.code||"error")+'). Publish the updated Firestore rules, then refresh.</p>'})}
 
 function traffic(c){
   var box=$("traf");
