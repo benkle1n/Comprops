@@ -364,13 +364,13 @@ R.forEach((x,i)=>{if(PH[x.addr])x.photos=PH[x.addr];x.added=Date.parse(ADD[x.src
 function applyPH(){R.forEach(x=>{if(PH[x.addr])x.photos=PH[x.addr]})}
 if(!Object.keys(PH).length){const ldP=(v,tries)=>{const sc=document.createElement("script");sc.src="photos.js?v="+v;sc.onload=()=>{Object.assign(PH,window.__PH||{});applyPH();try{render();route()}catch(_){}};sc.onerror=()=>{sc.remove();if(tries>0)setTimeout(()=>ldP(Date.now(),tries-1),1500)};document.head.appendChild(sc)};ldP("20261102",2)}
 const COL=[["#27364a","#4a6a8f"],["#3d4a2f","#7a8f4a"],["#5a2f3a","#a8556a"],["#1f4a4a","#45a0a0"],["#4a2f5a","#8f55a8"]];
-let mine=ls("cp_mine")||[],users=ls("cp_users")||[],sess=ls("cp_sess"),after=null,view="list",sel=null;
+let RL=[],RLdone=false,mine=ls("cp_mine")||[],users=ls("cp_users")||[],sess=ls("cp_sess"),after=null,view="list",sel=null;
 mine.forEach(m=>{if(m.addr)m.title=m.addr});
-const all=()=>[...mine.filter(m=>!m.draft&&!m.hidden),...R],me=()=>users.find(u=>u.email===sess);
+const all=()=>{const ids=new Set(mine.map(m=>m.id));return [...mine.filter(m=>!m.draft&&!m.hidden),...RL.filter(r=>!ids.has(r.id)),...R]},me=()=>users.find(u=>u.email===sess);
 const hash=async(e,p)=>{try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(e+":"+p));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(_){return btoa(e+":"+p)}};
 const HP="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
 let SAV=ls("cp_saved")||{};
-const sk=x=>x.own?x.id:(x.src+"|"+x.slug),savedKeys=()=>{const u=me();return u?(SAV[u.email]||[]):[]},isSaved=x=>savedKeys().includes(sk(x));
+const sk=x=>x.own||x.rl?x.id:(x.src+"|"+x.slug),savedKeys=()=>{const u=me();return u?(SAV[u.email]||[]):[]},isSaved=x=>savedKeys().includes(sk(x));
 const heart=(x,r)=>{const on=isSaved(x);return `<button type="button" class="heart${r?" r":""}" data-hid="${esc(x.id)}" aria-pressed="${on}" aria-label="${on?"Remove from saved listings":"Save this listing"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HP}"/></svg></button>`};
 function toggleSave(id){const x=all().find(i=>i.id===id),u=me();if(!x)return;
   if(!u){toast("Sign in to save listings.");after=()=>toggleSave(id);openAuth("in");return}
@@ -432,7 +432,7 @@ let lmap=null,lyr=null,lKey="",tl=0,base=null,lab=null,lab2=null,rivL=[],TL={},c
 /* New listings: find the real street location (OpenStreetMap search, free) so the pin sits on the address, not the neighborhood. */
 async function geocode(addr,hood){const h=hood&&hood!=="Other Pittsburgh area"&&hood!=="Pittsburgh"?hood+", ":"";
   for(const q of [addr+", "+h+"Pittsburgh, PA",addr+", Allegheny County, PA"]){try{const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&bounded=1&viewbox=-80.6,40.8,-79.5,40.1&q="+encodeURIComponent(q));const j=await r.json();if(j&&j[0]&&isFinite(+j[0].lat)&&isFinite(+j[0].lon))return[+j[0].lat,+j[0].lon]}catch(_){}await new Promise(k=>setTimeout(k,1100))}return null}
-async function locate(rec){if(!rec||rec.ll||!rec.addr)return;const p=await geocode(rec.addr,rec.hood);if(p&&!rec.ll){rec.ll=p;ls("cp_mine",mine);render()}}
+async function locate(rec){if(!rec||rec.ll||!rec.addr)return;const p=await geocode(rec.addr,rec.hood);if(p&&!rec.ll){rec.ll=p;ls("cp_mine",mine);if(SYN()&&rec.sync)pushL(rec,false);render()}}
 function geo(x){if(x.ll&&x.ll.length===2&&isFinite(x.ll[0])&&isFinite(x.ll[1]))return x.ll;const a=AG[x.addr],b=a||GEO[x.hood]||GEO.Pittsburgh;let h=0;for(const c of x.id+x.addr)h=(h*31+c.charCodeAt(0))>>>0;const j=a?.0004:(x.hood==="Pittsburgh"||x.hood==="Other Pittsburgh area")?.02:.0028;return[b[0]+((h%1000)/1000-.5)*2*j,b[1]+(((h>>>10)%1000)/1000-.5)*2*j]}
 function fit(r){if(lmap&&r.length)lmap.fitBounds(L.latLngBounds(r.map(geo)),{padding:[34,34],maxZoom:13})}
 const RIV=[[[40.5230,-79.8350],[40.5100,-79.8650],[40.4980,-79.9050],[40.4900,-79.9400],[40.4800,-79.9530],[40.4700,-79.9640],[40.4600,-79.9760],[40.4520,-79.9880],[40.4470,-80.0000],[40.4416,-80.0127]],
@@ -565,6 +565,8 @@ function bk(x){const b=/^\s*1327\s+arch\s+st/i.test(x.addr||"")?{name:"Comprops"
 function mailWire(x){const o={id:lkey(x),ti:x.addr||x.title},b=$("mailBtn");if(b)b.addEventListener("click",()=>track("email",o));document.querySelectorAll("#lpage a[href^='tel:']").forEach(a=>a.addEventListener("click",()=>track("call",o)))}
 
 function drawPage(){const id=pid(),x=id&&all().find(i=>i.id===id),u=me(),p=$("lpage");
+  if(x&&x.rl&&!x.full&&!x.fp){x.fp=1;loadPh(x)}
+  if(!x&&!RLdone&&fbOn()){p.innerHTML='<div class="wrap lp"><a class="link" href="#results">← Back to all listings</a><h1>Loading…</h1></div>';return}
   if(!x){p.innerHTML='<div class="wrap lp"><a class="link" href="#results">← Back to all listings</a><h1>Listing not found</h1><p class="sub">This listing may have been removed.</p></div>';return}
   const pics=x.photos&&x.photos.length?'<div class="gal">'+x.photos.map((q,i)=>'<img src="'+esc(q)+'" alt="Photo '+(i+1)+' of '+esc(x.title)+'">').join("")+'</div>':'<div class="thumb ill" style="--c1:'+x.c1+';--c2:'+x.c2+'">'+art(x.type)+'</div>';
   p.innerHTML=`<div class="wrap lp"><a class="link" href="#results">← Back to all listings</a><h1 style="margin-top:14px">${esc(x.title)}</h1><p class="sub" style="margin:6px 0 16px">${esc(x.type)} · ${md(x.mode)} · ${esc(loc(x))}</p><div class="gwrap">${pics}${heart(x,1)}</div>
@@ -636,7 +638,43 @@ function recordSignup(email,name,role,prov){track("signup");if(!AN.on)return;con
 function fbInit(){if(!fbOn())return Promise.resolve(null);if(fbP)return fbP;
   const V="10.12.2",B="https://www.gstatic.com/firebasejs/"+V+"/";
   return fbP=loadScript(B+"firebase-app-compat.js").then(()=>loadScript(B+"firebase-auth-compat.js")).then(()=>loadScript(B+"firebase-firestore-compat.js")).then(()=>{firebase.initializeApp(FB.config);fbA=firebase.auth();try{fbDB=firebase.firestore()}catch(_){}
-    fbA.onAuthStateChanged(u=>{if(u&&u.email){adopt(u.email,u.displayName,"fb",null,true);backfillOnce(u)}else if(!u&&me()&&me().fb){sess=null;ls("cp_sess",null);render()}});return fbA}).catch(()=>{fbP=null;return null})}
+    setTimeout(loadPublic,0);fbA.onAuthStateChanged(u=>{if(u&&u.email){adopt(u.email,u.displayName,"fb",null,true);backfillOnce(u);syncMine(u)}else if(!u&&me()&&me().fb){sess=null;ls("cp_sess",null);render()}});return fbA}).catch(()=>{fbP=null;return null})}
+
+/* ===== Shared listings (Firestore) ===== */
+const LF=["id","uid","email","title","type","hood","addr","sf","price","ll","mode","c1","c2","desc","phone","contact","url","added","ts","mt","pub","hidden","draft","th","n"];
+const imgOk=v=>typeof v==="string"&&v.length<1000000&&/^data:image\/(jpeg|png|webp);base64,/.test(v),hexOk=v=>typeof v==="string"&&/^#[0-9a-f]{3,8}$/i.test(v),str=(v,n)=>typeof v==="string"?v.slice(0,n):"";
+function cleanRemote(d){if(!d||typeof d!=="object"||!d.id||!TYPES.includes(d.type)||!HOOD[d.hood])return null;
+  const c=COL[0];return{id:str(d.id,40),rl:1,uid:str(d.uid,128),added:+d.added||0,ts:+d.ts||+d.added||0,mt:+d.mt||0,title:str(d.title||d.addr,200),type:d.type,hood:d.hood,addr:str(d.addr,200),sf:+d.sf||0,price:str(d.price,60),
+    ll:Array.isArray(d.ll)&&d.ll.length===2&&d.ll.every(n=>typeof n==="number"&&isFinite(n))?d.ll:undefined,mode:d.mode==="Sale"?"Sale":"Lease",c1:hexOk(d.c1)?d.c1:c[0],c2:hexOk(d.c2)?d.c2:c[1],desc:str(d.desc,2000),phone:str(d.phone,40),contact:str(d.contact,120),email:str(d.email,200),
+    url:/^https?:\/\//i.test(d.url||"")?str(d.url,500):undefined,th:imgOk(d.th)?d.th:"",n:+d.n||0,photos:imgOk(d.th)?[d.th]:[]}}
+function loadPublic(){if(!fbDB)return;fbDB.collection("listings").where("pub","==",true).get().then(q=>{RL=q.docs.map(d=>cleanRemote(Object.assign({id:d.id},d.data()))).filter(Boolean);RLdone=true;render()}).catch(e=>{RLdone=true;console.warn("listings load failed",e&&e.code);if(pid())drawPage()})}
+function loadPh(x){if(!fbDB)return;fbDB.doc("listingPhotos/"+x.id).get().then(d=>{const p=d.exists?(d.data().ph||[]).filter(imgOk).slice(0,5):[];if(p.length)x.photos=p;x.full=1;if(pid()===x.id)drawPage()}).catch(()=>{x.fp=0})}
+const rs=(src,max,q)=>new Promise(ok=>{const i=new Image();i.onerror=()=>ok(src);i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(i.width*k));c.height=Math.max(1,Math.round(i.height*k));const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",q))};i.src=src});
+async function fitPh(a){let p=a.slice(0,5),t=p.reduce((n,x)=>n+x.length,0),m=900,q=.6;while(t>880000&&m>420){m-=120;q=Math.max(.45,q-.05);p=await Promise.all(a.slice(0,5).map(x=>rs(x,m,q)));t=p.reduce((n,x)=>n+x.length,0)}return p}
+let pq=Promise.resolve();const SYN=()=>fbA&&fbA.currentUser&&fbDB?fbA.currentUser:null;
+function pushL(x,withPh){return pq=pq.then(async()=>{const u=SYN();if(!u||!x)return false;try{
+  if(withPh!==false&&x.photos&&x.photos.length){x.photos=await fitPh(x.photos);x.th=await rs(x.photos[0],480,.6)}
+  x.mt=Date.now();const d={mt:x.mt,id:x.id,uid:u.uid,email:String(x.email||u.email||"").toLowerCase(),title:x.title||x.addr||"",type:x.type,hood:x.hood,addr:x.addr||"",sf:+x.sf||0,price:x.price||"",mode:x.mode==="Sale"?"Sale":"Lease",c1:x.c1,c2:x.c2,desc:x.desc||"",phone:x.phone||"",contact:x.contact||"",added:+x.added||Date.now(),ts:+x.ts||Date.now(),pub:!x.draft&&!x.hidden,hidden:!!x.hidden,draft:!!x.draft,th:x.th||"",n:(x.photos||[]).length};
+  if(x.ll)d.ll=x.ll;if(x.url)d.url=x.url;
+  if(withPh!==false&&x.photos&&x.photos.length)await fbDB.doc("listingPhotos/"+x.id).set({uid:u.uid,ph:x.photos,ts:Date.now()});
+  await fbDB.doc("listings/"+x.id).set(d);x.sync=Date.now();x.uid=u.uid;ls("cp_mine",mine);return true}catch(e){console.warn("listing sync failed",e&&e.code);return false}})}
+function delL(id){return pq=pq.then(async()=>{const u=SYN();if(!u)return false;try{await fbDB.doc("listingPhotos/"+id).delete().catch(()=>{});await fbDB.doc("listings/"+id).delete();return true}catch(e){console.warn("listing delete failed",e&&e.code);return false}})}
+function queueDel(id){const a=ls("cp_del")||[];if(!a.includes(id)){a.push(id);ls("cp_del",a)}}
+async function flushDel(){const a=ls("cp_del")||[],k=[];for(const id of a){if(!(await delL(id)))k.push(id)}ls("cp_del",k)}
+let syncing=false;
+async function syncMine(u){if(syncing||!u||!fbDB)return;syncing=true;try{
+  await flushDel();const em=String(u.email||"").toLowerCase();
+  const q=await fbDB.collection("listings").where("uid","==",u.uid).get(),remote={};q.docs.forEach(d=>{remote[d.id]=Object.assign({id:d.id},d.data())});
+  let ch=false;
+  for(const id of Object.keys(remote)){const r=remote[id],i=mine.findIndex(m=>m.id===id);
+    const mv=o=>Math.max(+o.mt||0,+o.ts||0);if(i<0||mv(r)>mv(mine[i])){let ph=i>=0?mine[i].photos:[];if(r.n>0){try{const pd=await fbDB.doc("listingPhotos/"+id).get();if(pd.exists)ph=(pd.data().ph||[]).filter(imgOk)}catch(_){}}
+      const c=cleanRemote(r);if(!c)continue;const m=Object.assign({},c,{own:1,rl:undefined,photos:ph&&ph.length?ph:c.photos,email:r.email||em,hidden:r.hidden?1:undefined,draft:r.draft?1:undefined,sync:Date.now()});delete m.rl;if(i>=0)mine[i]=m;else mine.unshift(m);ch=true}
+    else if(mv(mine[i])>mv(r)){await pushL(mine[i],true)}
+    else if(!mine[i].sync){mine[i].sync=Date.now();ch=true}}
+  for(let i=mine.length-1;i>=0;i--){const m=mine[i];if(m.email&&String(m.email).toLowerCase()!==em)continue;if(remote[m.id])continue;
+    if(m.sync){mine.splice(i,1);ch=true}
+    else if(!m.email||String(m.email).toLowerCase()===em){await pushL(m,true)}}
+  if(ch)ls("cp_mine",mine);render();loadPublic()}catch(e){console.warn("sync failed",e&&e.code)}finally{syncing=false}}
 const FBERR={"auth/email-already-in-use":"That email already has an account. Sign in instead.","auth/invalid-credential":"Email or password is incorrect.","auth/wrong-password":"Email or password is incorrect.","auth/user-not-found":"Email or password is incorrect.","auth/invalid-email":"Enter a valid email address.","auth/weak-password":"Use a password of at least 8 characters.","auth/too-many-requests":"Too many attempts. Try again in a few minutes.","auth/popup-closed-by-user":"Sign-in was cancelled.","auth/cancelled-popup-request":"Sign-in was cancelled.","auth/popup-blocked":"Your browser blocked the sign-in window. Allow pop-ups for this site and try again.","auth/unauthorized-domain":"This website address isn’t approved for sign-in yet.","auth/operation-not-allowed":"That sign-in method isn’t turned on yet.","auth/network-request-failed":"Network problem. Check your connection and try again."};
 const fbMsg=e=>FBERR[e&&e.code]||"Something went wrong. Please try again.";
 /* make sure a local profile exists for a signed-in account, then start the session */
@@ -696,7 +734,8 @@ $("fAuth").onsubmit=async e=>{e.preventDefault();const em=$("aEmail").value.trim
 function openNew(){if(!me()){after=openNew;openAuth("up");$("aSub").textContent="Create a free account to list your property.";return}fillForm(null)}
 $("fNew").onsubmit=e=>{e.preventDefault();if(!photos.length){$("nErr").textContent="Add at least one photo to publish your listing.";$("nPhotos").focus();return}const u=me(),c=COL[mine.length%COL.length],ty=$("nType").value;
   const rec={id:"m"+Date.now(),own:1,added:Date.now(),ts:Date.now(),title:$("nAddr").value.trim(),type:ty,hood:$("nHood").value,addr:$("nAddr").value.trim(),sf:+$("nSf").value,price:priceOut(),ll:(addrLL&&$("nAddr").value.trim()===addrLine)?addrLL:undefined,mode:$("nMode").value,c1:c[0],c2:c[1],desc:$("nDesc").value.trim()||DESC[ty],phone:$("nPhone").value.trim(),contact:u.name,email:u.email,photos:[...photos],url:/^https?:\/\//i.test($("lnk").value.trim())?$("lnk").value.trim():undefined};if(editId){const i=mine.findIndex(m=>m.id===editId);rec.id=editId;rec.added=mine[i].added||T(mine[i]);rec.c1=mine[i].c1;rec.c2=mine[i].c2;if(!rec.ll&&mine[i].addr===rec.addr&&mine[i].hood===rec.hood)rec.ll=mine[i].ll;if(mine[i].hidden)rec.hidden=1;mine[i]=rec}else{mine.unshift(rec);track("newlisting",{ti:rec.addr})}editId=null;ls("cp_draft",null);ls("cp_phone",rec.phone);
-  ls("cp_mine",mine);locate(rec);$("dNew").close();$("q").value="";TS.clear();TN=false;$("u").value="";render();toast("Listed for free. Your property is live.");$("results").scrollIntoView()};
+  ls("cp_mine",mine);locate(rec);$("dNew").close();$("q").value="";TS.clear();TN=false;$("u").value="";render();
+  if(SYN()){toast("Listed for free. Publishing it for everyone…");pushL(rec,true).then(ok=>{toast(ok?"Listed for free. Your property is live for everyone.":"Saved here, but it couldn’t be published online yet. It will retry the next time you open the site.");render()})}else toast("Saved on this device only. Sign out, then sign back in (or create an account) to publish it for everyone.");$("results").scrollIntoView()};
 
 /* easy-post tools */
 let editId=null,photos=[];
@@ -786,20 +825,21 @@ $("csv").onchange=async e=>{const f=e.target.files[0];if(!f)return;const rows=(a
   const head=sp(rows[0]||"").map(s=>s.toLowerCase()),g=(a,k)=>a[head.indexOf(k)]||"";
   rows.slice(1).forEach(r=>{const a=sp(r),ty=TYPES.find(t=>t.toLowerCase()===g(a,"type").toLowerCase()),h=Object.keys(HOOD).find(t=>t.toLowerCase()===g(a,"neighborhood").toLowerCase());if(!g(a,"address")||!ty||!h)return;const c=COL[(mine.length+n)%COL.length];
     mine.unshift({id:"m"+Date.now()+n,own:1,draft:1,added:Date.now(),ts:Date.now(),title:g(a,"address").slice(0,60),type:ty,hood:h,addr:g(a,"address"),sf:+g(a,"sf")||0,price:g(a,"price"),mode:/sale/i.test(g(a,"mode"))?"Sale":"Lease",c1:c[0],c2:c[1],desc:DESC[ty],phone:g(a,"phone"),contact:u.name,email:u.email});n++});
-  e.target.value="";ls("cp_mine",mine);render();$("dNew").close();toast(n?"Imported "+n+" as drafts. Add a photo to each in My listings to publish.":"No rows imported. Check the column names and values.")};
+  e.target.value="";ls("cp_mine",mine);render();if(SYN())syncMine(SYN());$("dNew").close();toast(n?"Imported "+n+" as drafts. Add a photo to each in My listings to publish.":"No rows imported. Check the column names and values.")};
 let pendDel=null;
 function openMine(){const b=$("mBody"),u=me(),mp=mine.filter(x=>!x.email||x.email===u.email),sv=savedKeys().map(k=>all().find(x=>sk(x)===k)).filter(Boolean);
-  b.innerHTML='<button class="link x" data-close aria-label="Close">Close</button><h2>My listings</h2><h3 class="mh">Posted by you</h3>'+(mp.length?mp.map(x=>`<div class="mrow"><div><strong>${esc(x.title)}</strong><span class="sub" style="margin:0">${esc(x.hood)} · ${esc(x.price)}${x.draft?' · Draft: add a photo to publish':''}${x.hidden?' · Hidden from the site':''}</span></div><div class="acts"><button class="btn alt mini" data-a="e" data-i="${x.id}">Edit</button>${x.draft?"":`<button class="btn alt mini" data-a="h" data-i="${x.id}">${x.hidden?"Unhide":"Hide"}</button>`}${pendDel===x.id?`<button class="btn mini" data-a="x" data-i="${x.id}" style="background:#b3261e;border-color:#b3261e;color:#fff">Tap again to delete</button><button class="btn alt mini" data-a="c" data-i="${x.id}">Cancel</button>`:`<button class="btn alt mini" data-a="x" data-i="${x.id}">Delete</button>`}</div></div>`).join(""):'<p class="empty">No listings yet. Post your first one, it only takes a minute.</p>')+'<button class="btn" id="mNew">Post a new listing</button><h3 class="mh">Saved listings</h3>'+(sv.length?sv.map(x=>`<div class="mrow"><div><strong>${esc(x.title)}</strong><span class="sub" style="margin:0">${esc(x.hood)} · ${esc(pt(x)[0][1])}</span></div><div class="acts"><a class="btn alt mini" href="#listing=${encodeURIComponent(x.id)}">View</a><button class="btn alt mini" data-a="u" data-i="${esc(x.id)}">Remove</button></div></div>`).join(""):'<p class="empty">Nothing saved yet. Tap the heart on any listing to save it here.</p>');
+  const un=mp.filter(x=>!x.sync&&!x.draft).length,bn=un&&fbOn()?'<p class="sub" role="status">'+(SYN()?'Publishing '+un+' listing'+(un>1?'s':'')+' for everyone…':un+' listing'+(un>1?'s are':' is')+' saved only on this device. To show '+(un>1?'them':'it')+' to everyone, sign out, then sign back in or create an account with the same email.')+'</p>':'';
+  b.innerHTML='<button class="link x" data-close aria-label="Close">Close</button><h2>My listings</h2>'+bn+'<h3 class="mh">Posted by you</h3>'+(mp.length?mp.map(x=>`<div class="mrow"><div><strong>${esc(x.title)}</strong><span class="sub" style="margin:0">${esc(x.hood)} · ${esc(x.price)}${x.draft?' · Draft: add a photo to publish':''}${x.hidden?' · Hidden from the site':''}</span></div><div class="acts"><button class="btn alt mini" data-a="e" data-i="${x.id}">Edit</button>${x.draft?"":`<button class="btn alt mini" data-a="h" data-i="${x.id}">${x.hidden?"Unhide":"Hide"}</button>`}${pendDel===x.id?`<button class="btn mini" data-a="x" data-i="${x.id}" style="background:#b3261e;border-color:#b3261e;color:#fff">Tap again to delete</button><button class="btn alt mini" data-a="c" data-i="${x.id}">Cancel</button>`:`<button class="btn alt mini" data-a="x" data-i="${x.id}">Delete</button>`}</div></div>`).join(""):'<p class="empty">No listings yet. Post your first one, it only takes a minute.</p>')+'<button class="btn" id="mNew">Post a new listing</button><h3 class="mh">Saved listings</h3>'+(sv.length?sv.map(x=>`<div class="mrow"><div><strong>${esc(x.title)}</strong><span class="sub" style="margin:0">${esc(x.hood)} · ${esc(pt(x)[0][1])}</span></div><div class="acts"><a class="btn alt mini" href="#listing=${encodeURIComponent(x.id)}">View</a><button class="btn alt mini" data-a="u" data-i="${esc(x.id)}">Remove</button></div></div>`).join(""):'<p class="empty">Nothing saved yet. Tap the heart on any listing to save it here.</p>');
   b.querySelector("[data-close]").onclick=()=>$("dMine").close();$("mNew").onclick=()=>{$("dMine").close();openNew()};
   b.onclick=e=>{const a=e.target.dataset.a;if(!a)return;if(a==="u"){toggleSave(e.target.dataset.i);return}const i=mine.findIndex(m=>m.id===e.target.dataset.i),x=mine[i];
     if(a==="e"){$("dMine").close();fillForm(x);return}
     if(!x&&a!=="c"){return}
     if(a==="c"){pendDel=null;openMine();return}
-    if(a==="h"){x.hidden=!x.hidden;pendDel=null;toast(x.hidden?"Hidden. It no longer shows on the site. Tap Unhide to bring it back.":"Visible again. Your listing is back on the site.")}
-    if(a==="x"){if(pendDel!==x.id){pendDel=x.id;openMine();return}mine.splice(i,1);pendDel=null;toast("Listing deleted.")}
+    if(a==="h"){x.hidden=!x.hidden;x.mt=Date.now();pendDel=null;pushL(x,!x.sync);toast(x.hidden?"Hidden. It no longer shows on the site. Tap Unhide to bring it back.":"Visible again. Your listing is back on the site.")}
+    if(a==="x"){if(pendDel!==x.id){pendDel=x.id;openMine();return}mine.splice(i,1);pendDel=null;if(x.sync||SYN())delL(x.id).then(ok=>{if(!ok&&x.sync)queueDel(x.id)});else if(x.sync)queueDel(x.id);toast("Listing deleted.")}
     ls("cp_mine",mine);render();openMine()};
   if(!$("dMine").open)$("dMine").showModal()}
-render();route();
+render();route();if(fbOn())fbInit();
 mine.filter(m=>!m.ll&&!m.draft).forEach((m,i)=>setTimeout(()=>locate(m),2000+i*2500));
 /* Landing link for ads: comprops.com/signup opens the Create-account box (the visitor's ad tags stay in the address). */
 try{if(/^#signup\b/.test(location.hash)){history.replaceState(null,"",location.pathname+location.search);if(!me())setTimeout(()=>openAuth("up"),400)}}catch(_){}
